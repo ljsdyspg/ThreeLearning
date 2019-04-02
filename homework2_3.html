@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>计算机图形学-第二次作业-胡宇翔</title>
+    <script type="text/javascript" src="three.js"></script>
+    <script type="text/javascript" src="OrbitControls.js"></script>
+    <script type="text/javascript" src="stats.min.js"></script>
+    <script type="text/javascript" src="dat.gui.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="Stats"></div>
+<div id="WebGL"></div>
+<script type="text/javascript">
+    function init() {
+        // 初始化监控
+        var stats = initStats();
+
+        // 初始化场景
+        var scene = new THREE.Scene();
+
+        // 初始化相机
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        // 初始化渲染器
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(new THREE.Color(0xFFFFFF));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMapEnabled = true;
+
+        var axes = new THREE.AxisHelper(50);
+        scene.add(axes);
+        // 全局光照
+        var ambiLightColor = "#555555";
+        var ambiLight = new THREE.AmbientLight(ambiLightColor);
+        scene.add(ambiLight);
+
+        var lightColor = "#CCCCCC";
+        var light = new THREE.DirectionalLight(lightColor);
+        light.intensity = 1;
+        light.position.set(100, 100, 100);
+        light.castShadow = true;
+        //light.shadowCameraVisible = true;
+
+        light.shadowCameraNear = 2;
+        light.shadowCameraFar = 2000;
+        light.shadowCameraLeft = -30;
+        light.shadowCameraRight = 30;
+        light.shadowCameraTop = 30;
+        light.shadowCameraBottom = -30;
+
+        scene.add(light);
+        // 创建平面
+        var planeColor = "#888888";
+        var planeGeometry = new THREE.PlaneGeometry(600, 200, 20, 20);
+        var planeMaterial = new THREE.MeshLambertMaterial({color: planeColor});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+        plane.position.set(0, -15, 0);
+        plane.rotation.x = -0.5 * Math.PI;
+        scene.add(plane);
+
+        camera.position.set(-50, 50, 50);
+        camera.lookAt(scene.position);
+
+        // ---------------------题目验证代码-------------------------------------------------------------------------
+        // 题目所给ABC三点
+        var A = new THREE.Vector4(1, 1, 1, 1);
+        var B = new THREE.Vector4(2, 2, 1, 1);
+        var C = new THREE.Vector4(2, 1, 2, 1);
+
+        // 计算向量AC
+        var AC = new THREE.Vector4();
+        AC.subVectors(C, A).normalize();
+        // 计算向量AB
+        var AB = new THREE.Vector4();
+        AB.subVectors(B, A).normalize();
+        console.log("AC: ", AC);
+        console.log("AB: ", AB);
+
+        // u轴为AB向量
+        var u = new THREE.Vector4();
+        u.subVectors(B, A).normalize();
+        console.log("u" + u.toArray());
+        // 做向量AC,AB的叉乘，求v
+        var v = cross_product(AC, AB).normalize();
+        console.log("v" + v.toArray());
+
+        // 做v,u的叉乘，求n
+        var n = cross_product(AB, v).normalize();
+        console.log("n" + n.toArray());
+
+        // 移到uvn坐标系中
+        u.add(A.clone());
+        v.add(A.clone());
+        n.add(A.clone());
+
+        // 三角形的两边
+        drawLine(A, B, "#000");
+        drawLine(A, C, "#000");
+        drawLine(C, B, "#000");
+
+        // 画出uvn轴
+        drawLines();
+
+        function drawLines() {
+            // u轴
+            drawLine(u, A, "#f00");
+            // v轴
+            drawLine(v, A, "#0F0");
+            // n轴
+            drawLine(n, A, "#00f");
+        }
+
+        rotate();
+        // uvn与xyz重合时，做旋转使uvn与xyz对应重合
+        var rotate_flag = true;
+
+        function rotate() {
+            var o = new THREE.Vector4(0, 0, 0, 1);
+            /*xx = u.clone().add(A.clone().negate()).normalize();
+            yy = v.clone().add(A.clone().negate()).normalize();
+            zz = n.clone().add(A.clone().negate()).normalize();*/
+            xx = u.clone().normalize();
+            yy = v.clone().normalize();
+            zz = n.clone().normalize();
+            console.log("xx"+xx.toArray());
+            console.log("yy"+yy.toArray());
+            console.log("zz"+zz.toArray());
+
+            // 画出来
+            drawLine(o, xx, "#f00");
+            drawLine(o, yy, "#0f0");
+            drawLine(o, zz, "#00f");
+
+            var tt = new THREE.Matrix4();
+            // tt.makeTranslation(-A.x,-A.y,-A.z);
+            tt.set(
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                -A.x, -A.y, -A.z, 1
+            );
+            tt.getInverse(tt);
+            /*1, 0, 0, x,
+              0, 1, 0, y,
+              0, 0, 1, z,
+              0, 0, 0, 1*/
+            xx.applyMatrix4(tt);
+            yy.applyMatrix4(tt);
+            zz.applyMatrix4(tt);
+
+            console.log("xx"+xx.toArray());
+            console.log("yy"+yy.toArray());
+            console.log("zz"+zz.toArray());
+
+         /*   var rr = new THREE.Matrix4();
+            rr.makeBasis(xx, yy, zz);
+            rr.getInverse(rr);
+
+            xx.applyMatrix4(rr);
+            yy.applyMatrix4(rr);
+            zz.applyMatrix4(rr);*/
+        }
+
+        // ---------------------题目验证代码-------------------------------------------------------------------------
+
+        function cross_product(vector0, vector1) {
+            var temp = new THREE.Vector4();
+            temp.x = vector0.y * vector1.z - vector0.z * vector1.y;
+            temp.y = vector0.z * vector1.x - vector0.x * vector1.z;
+            temp.z = vector0.x * vector1.y - vector0.y * vector1.x;
+            return temp;
+        }
+
+
+        function drawLine(p1, p2, color) {
+            var lineGeometry = new THREE.Geometry();
+            lineGeometry.vertices.push(p1);
+            lineGeometry.vertices.push(p2);
+            var lineMatertial = new THREE.LineDashedMaterial({color: color});
+            var line = new THREE.Line(lineGeometry, lineMatertial);
+            scene.add(line);
+        }
+
+        var controls = new function () {
+            this.visible = true;
+        };
+        var gui = new dat.GUI();
+        gui.add(controls, 'visible');
+
+
+        // 新建轨道控制器
+        var orbitControls = new THREE.OrbitControls(camera);
+        // orbitControls.autoRotate = true;
+        // 更新控制器
+        var clock = new THREE.Clock();
+
+        document.getElementById("WebGL").appendChild(renderer.domElement);
+
+
+        render();
+
+        function initStats() {
+            var stats = new Stats();
+            stats.setMode(0);
+
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.left = '0px';
+
+            document.getElementById("Stats").appendChild(stats.domElement);
+            return stats;
+        }
+
+
+        function render() {
+            stats.update();
+
+
+            var delta = clock.getDelta();
+            orbitControls.update(delta);
+
+            axes.visible = controls.visible;
+
+
+            /*// 移动的速率
+            var step = 0.002;
+            if(A.x>0){
+                // 依次删除uvn画的线
+                var allChildren = scene.children;
+                var line_0 = allChildren[allChildren.length-1];
+                var line_1 = allChildren[allChildren.length-2];
+                var line_2 = allChildren[allChildren.length-3];
+                scene.remove(line_0);
+                scene.remove(line_1);
+                scene.remove(line_2);
+
+                // 将uvn坐标系移动到主坐标系
+                A.x -= step;
+                A.y -= step;
+                A.z -= step;
+                u.x -= step;
+                u.y -= step;
+                u.z -= step;
+                v.x -= step;
+                v.y -= step;
+                v.z -= step;
+                n.x -= step;
+                n.y -= step;
+                n.z -= step;
+                drawLines();
+            }else{
+                // 旋转，没有过渡动画，手动点visible为false，隐藏原有坐标系，显示旋转后的坐标系
+                if(rotate_flag){
+                    rotate();
+                    rotate_flag = false;
+                }
+            }*/
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

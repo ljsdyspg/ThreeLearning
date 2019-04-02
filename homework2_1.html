@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>计算机图形学-第二次作业-胡宇翔</title>
+    <script type="text/javascript" src="three.js"></script>
+    <script type="text/javascript" src="OrbitControls.js"></script>
+    <script type="text/javascript" src="stats.min.js"></script>
+    <script type="text/javascript" src="dat.gui.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="Stats"></div>
+<div id="WebGL"></div>
+<script type="text/javascript">
+    function init() {
+        // 初始化监控
+        var stats = initStats();
+
+        // 初始化场景
+        var scene = new THREE.Scene();
+
+        // 初始化相机
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        // 初始化渲染器
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(new THREE.Color(0xFFFFFF));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMapEnabled = true;
+
+        var axes = new THREE.AxisHelper(50);
+        scene.add(axes);
+
+        // 创建平面
+        var planeColor = "#888888";
+        var planeGeometry = new THREE.PlaneGeometry(600, 200, 20, 20);
+        var planeMaterial = new THREE.MeshLambertMaterial({color: planeColor});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+        plane.position.set(0, -15, 0);
+        plane.rotation.x = -0.5 * Math.PI;
+        scene.add(plane);
+
+        camera.position.set(-50, 50, 50);
+        camera.lookAt(scene.position);
+
+        var vector_line_0 = new THREE.Vector3(10, 0, 10);
+       /* // 画线
+        var lineGeometry_0 = new THREE.Geometry();
+        lineGeometry_0.vertices.push(new THREE.Vector3(0, 0, 0));
+        var vector_line_0 = new THREE.Vector3(10, 0, 10);
+        lineGeometry_0.vertices.push(vector_line_0);
+        var lineMatertial = new THREE.LineDashedMaterial({color: "#FFFF00"});
+        var line = new THREE.Line(lineGeometry_0, lineMatertial);
+        scene.add(line);*/
+       drawLine(vector_line_0,"#ffff00");
+
+
+
+
+        /*var matrix_0 = new THREE.Matrix4();
+        matrix_0.set(
+            1 / Math.sqrt(2), 0, -1 / Math.sqrt(2), 0,
+            0, 1, 0, 0,
+            1 / Math.sqrt(2), 0, 1 / Math.sqrt(2), 0,
+            0, 0, 0, 1
+        );
+        var matrix_1 = new THREE.Matrix4();
+        matrix_1.set(
+            1, 0, 0, 0,
+            0, Math.sqrt(3) / 2, -0.5, 0,
+            0, 0.5, Math.sqrt(3) / 2, 0,
+            0, 0, 0, 1
+        );
+        var matrix_2 = new THREE.Matrix4();
+        matrix_2.set(
+            1 / Math.sqrt(2), 0, 1 / Math.sqrt(2), 0,
+            0, 1, 0, 0,
+            -1 / Math.sqrt(2), 0, 1 / Math.sqrt(2), 0,
+            0, 0, 0, 1
+        );*/
+        // 绕Y轴转45°，回去
+        var matrix_0 = rotateY(45);
+        // 绕Z轴旋转30°
+        var matrix_1 = rotateZ(30);
+        // 绕Y轴反转45°，使目标轴与z轴重合
+        var matrix_2 = rotateY(-45);
+
+        function rotateX(angle) {
+            angle = Math.PI*angle/180;
+            var matrix = new THREE.Matrix3();
+            matrix.set(
+                1,0,0,
+                0,Math.cos(angle),-Math.sin(angle),
+                0,Math.sin(angle),Math.cos(angle)
+            );
+            return matrix;
+        }
+        function rotateY(angle) {
+            angle = Math.PI*angle/180;
+            var matrix = new THREE.Matrix3();
+            matrix.set(
+                Math.cos(angle),0,Math.sin(angle),
+                0,1,0,
+                -Math.sin(angle),0,Math.cos(angle)
+            );
+            return matrix;
+        }
+        function rotateZ(angle) {
+            angle = Math.PI*angle/180;
+            var matrix = new THREE.Matrix3();
+            matrix.set(
+                Math.cos(angle),-Math.sin(angle),0,
+                Math.sin(angle),Math.cos(angle),0,
+                0,0,1
+            );
+            return matrix;
+        }
+
+
+        var vector_line_1 = new THREE.Vector3();
+        var vector_line_2 = new THREE.Vector3();
+        var vector_line_3 = new THREE.Vector3();
+
+        console.log("Vector_line_0: "+vector_line_0.toArray());
+        console.log("Vector_line_1: "+vector_line_1.toArray());
+        console.log("Vector_line_2: "+vector_line_2.toArray());
+        console.log("Vector_line_3: "+vector_line_3.toArray());
+
+        console.log("matrix_2: "+matrix_2.toArray());
+
+        /*vector_line_1 = vector_line_0.applyMatrix3(matrix_2);
+        vector_line_2 = vector_line_1.applyMatrix3(matrix_1);
+        vector_line_3 = vector_line_1.applyMatrix3(matrix_0);*/
+        vector_line_1 = vector_line_0.clone().applyMatrix3(matrix_2);
+        vector_line_2 = vector_line_1.clone().applyMatrix3(matrix_1);
+        vector_line_3 = vector_line_2.clone().applyMatrix3(matrix_0);
+
+        console.log("Vector_line_0: "+vector_line_0.toArray());
+        console.log("Vector_line_1: "+vector_line_1.toArray());
+        console.log("Vector_line_2: "+vector_line_2.toArray());
+        console.log("Vector_line_3: "+vector_line_3.toArray());
+
+        drawLine(vector_line_1, "#F57F17");
+        // drawLine(vector_line_2, "#1565c0");
+
+
+        var P = new THREE.Vector3(10,10,0);
+        console.log("P: "+P.toArray());
+        var sphere0 = drawBall(1,"#ff0000",P);
+        scene.add(sphere0);
+        /*P.applyAxisAngle(new THREE.Vector3(1/Math.sqrt(2),0,1/Math.sqrt(2)), Math.PI/6);
+        console.log("P: "+P.toArray());
+        var sphere1 = drawBall(1,"#FF924F",P);
+        scene.add(sphere1);
+        console.log("rotation: "+P.toArray());*/
+        //drawBall(1,"#A83292",vector_line_0);
+        //drawBall(1,"#543534",vector_line_1);
+
+       /* P.applyMatrix3(matrix_2);
+        var sphere1 = drawBall(1,"#F57F17",P);
+        scene.add(sphere1);
+        P.applyMatrix3(matrix_1);
+        var sphere2 = drawBall(1,"#FBC02D",P);
+        scene.add(sphere2);
+        P.applyMatrix3(matrix_0);
+        var sphere3 = drawBall(1,"#FFEE58",P);
+        scene.add(sphere3);*/
+
+        var P_temp = new THREE.Vector3(10,10,0);
+        P_temp.applyAxisAngle(new THREE.Vector3(1/Math.sqrt(2),0,1/Math.sqrt(2)), Math.PI/6);
+
+        var lineGeometry = new THREE.Geometry();
+        lineGeometry.vertices.push(new THREE.Vector3(10,10,0));
+        lineGeometry.vertices.push(P_temp);
+        var lineMatertial = new THREE.LineDashedMaterial({color: "#000000"});
+        var line = new THREE.Line(lineGeometry, lineMatertial);
+        scene.add(line);
+
+
+        var sum_matrix = new THREE.Matrix3();
+        sum_matrix.identity();
+        sum_matrix.multiply(matrix_0);
+        sum_matrix.multiply(matrix_1);
+        sum_matrix.multiply(matrix_2);
+        P.applyMatrix3(sum_matrix);
+        var sphere_00 = drawBall(1,"#000000",P);
+        scene.add(sphere_00);
+
+        console.log("sum_matrix"+sum_matrix.toArray());
+
+
+
+
+
+
+
+        function drawBall(size, color, position) {
+            var sphereGeometry = new THREE.SphereGeometry(size, 20, 20);
+            var sphereMaterial = new THREE.MeshLambertMaterial({color: color});
+            var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.castShadow = true;
+
+            // position the sphere
+            sphere.position.set(position.x,position.y,position.z);
+
+            return sphere;
+        }
+
+
+
+        function drawLine(vector_line, color) {
+            var lineGeometry = new THREE.Geometry();
+            lineGeometry.vertices.push(new THREE.Vector3(0,0,0));
+            lineGeometry.vertices.push(vector_line);
+            var lineMatertial = new THREE.LineDashedMaterial({color: color});
+            var line = new THREE.Line(lineGeometry, lineMatertial);
+            scene.add(line);
+        }
+
+        /*var mat = new THREE.Matrix3();
+        mat.set(1 / Math.sqrt(2), 0, 1 / Math.sqrt(2),
+            0, 1, 0,
+            -1 / Math.sqrt(2), 0, 1 / Math.sqrt(2),);
+        console.log("mat: "+mat.toArray());
+        var v = new THREE.Vector3(10,0,10);
+        console.log("v: "+v.toArray());
+        v.applyMatrix3(mat);
+        console.log("v: "+v.toArray());*/
+
+
+
+        // 全局光照
+        var ambiLightColor = "#555555";
+        var ambiLight = new THREE.AmbientLight(ambiLightColor);
+        scene.add(ambiLight);
+
+        var lightColor = "#CCCCCC";
+        var light = new THREE.DirectionalLight(lightColor);
+        light.intensity = 1;
+        light.position.set(100, 100, 100);
+        light.castShadow = true;
+        //light.shadowCameraVisible = true;
+
+        light.shadowCameraNear = 2;
+        light.shadowCameraFar = 2000;
+        light.shadowCameraLeft = -30;
+        light.shadowCameraRight = 30;
+        light.shadowCameraTop = 30;
+        light.shadowCameraBottom = -30;
+
+        scene.add(light);
+
+        // 新建轨道控制器
+        var orbitControls = new THREE.OrbitControls(camera);
+        // orbitControls.autoRotate = true;
+        // 更新控制器
+        var clock = new THREE.Clock();
+
+        document.getElementById("WebGL").appendChild(renderer.domElement);
+
+        render();
+
+
+        function initStats() {
+            var stats = new Stats();
+            stats.setMode(0);
+
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.left = '0px';
+
+            document.getElementById("Stats").appendChild(stats.domElement);
+            return stats;
+        }
+
+        var angle = 0;
+        function render() {
+            stats.update();
+
+            var delta = clock.getDelta();
+            orbitControls.update(delta);
+
+   /*         P.applyAxisAngle(new THREE.Vector3(1/Math.sqrt(2),0,1/Math.sqrt(2)), Math.PI/60);
+            sphere1.position.x = P.x;
+            sphere1.position.y = P.y;
+            sphere1.position.z = P.z;*/
+
+
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
